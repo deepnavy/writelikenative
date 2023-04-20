@@ -7,20 +7,30 @@
         <textarea id="yourText" v-model="inputText" class="resize-none w-full h-32 p-2 border rounded-md"></textarea>
       </div>
       <!-- Add this below the 'Your text' input textarea -->
-      <div class="mb-4 flex">
-        <div class="flex items-center mr-4">
-          <input type="radio" id="correct" value="correct" v-model="selectedPrompt" class="mr-2">
-          <label for="correct" class="text-gray-700">Correct</label>
-        </div>
-        <div class="flex items-center mr-4">
-          <input type="radio" id="teammate" value="teammate" v-model="selectedPrompt" class="mr-2">
-          <label for="teammate" class="text-gray-700">Teammate</label>
-        </div>
-        <div class="flex items-center">
-          <input type="radio" id="blog" value="blog" v-model="selectedPrompt" class="mr-2">
-          <label for="blog" class="text-gray-700">Blog</label>
-        </div>
+      <div class="w-full flex mb-4">
+        <button
+          @click="selectedPrompt = 'correct'"
+          :class="{ 'bg-blue-600 text-white': selectedPrompt === 'correct', 'bg-gray-200 text-gray-800': selectedPrompt !== 'correct' }"
+          class="px-4 py-2 rounded-l-md"
+        >
+          Correct
+        </button>
+        <button
+          @click="selectedPrompt = 'teammate'"
+          :class="{ 'bg-blue-600 text-white': selectedPrompt === 'teammate', 'bg-gray-200 text-gray-800': selectedPrompt !== 'teammate' }"
+          class="px-4 py-2 border-l border-r"
+        >
+          Teammate
+        </button>
+        <button
+          @click="selectedPrompt = 'blog'"
+          :class="{ 'bg-blue-600 text-white': selectedPrompt === 'blog', 'bg-gray-200 text-gray-800': selectedPrompt !== 'blog' }"
+          class="px-4 py-2 rounded-r-md"
+        >
+          Blog
+        </button>
       </div>
+
       <button
         @click="improveText"
         :disabled="loading || isInputEmpty"
