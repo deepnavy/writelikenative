@@ -1,11 +1,13 @@
 import axios from "axios";
 
-const openai = axios.create({
-  baseURL: "https://api.openai.com/v1/chat/completions",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-  },
-});
+const createOpenaiInstance = (apiKey) => {
+  return axios.create({
+    baseURL: "https://api.openai.com/v1/chat/completions",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+  });
+};
 
-export default openai;
+export default createOpenaiInstance;
