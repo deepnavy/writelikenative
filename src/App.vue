@@ -3,6 +3,7 @@
     <header class="flex items-center justify-between px-4 py-2">
       <h1 class="text-sm text-slate-600 max-w-xs sm:max-w-full overflow-hidden whitespace-nowrap overflow-ellipsis">Write like <span class="pl-1 pr-1 bg-green-200 rounded text-green-800">a</span> native</h1>
       <button
+        v-if="!useAppAPIKey"
         @click="showModal = true"
         :class="{
           'bg-green-600': hasApiKey && !isInvalidApiKey,
@@ -21,6 +22,22 @@
         </template>
         <template v-else>Add API Key</template>
       </button>
+      <a
+        v-else
+        href="https://twitter.com/deepnavy"
+        target="_blank"
+        rel="noopener noreferrer"
+        :class="{
+          'bg-blue-600': true,
+          'text-white': true,
+          'px-4': true,
+          'py-2': true,
+          'rounded-full': true,
+          'whitespace-nowrap': true
+        }"
+      >
+        Feedback
+      </a>
     </header>
     <div class="z-50 container mx-auto px-4">
       <APIKeyModal
@@ -164,11 +181,16 @@ export default {
       loading: false,
       copied: false,
       showMore: false,
+      useAppAPIKey: true
     };
   },
   created() {
     const store = useStore();
-    if (!store.getters.getAPIKey) {
+    if (this.useAppAPIKey) {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+      this.$store.commit('setAPIKey', apiKey);
+    }
+    else if (!store.getters.getAPIKey) {
       this.outputText = "Please provide (top-right corner) an OpenAI API key to use the app.";
     }
   },
@@ -264,8 +286,8 @@ export default {
       });
     },
     syncTextAreaHeights() {
-      if (window.innerWidth >= 768) {
-        this.$nextTick(() => {
+      this.$nextTick(() => {
+        if (window.innerWidth >= 768) {
           const inputHeight = this.$refs.inputTextArea.scrollHeight;
           const outputHeight = this.$refs.outputTextArea.scrollHeight;
 
@@ -273,8 +295,10 @@ export default {
 
           this.$refs.inputTextArea.style.height = maxHeight + "px";
           this.$refs.outputTextArea.style.height = maxHeight + "px";
-        });
-      }
+        } else {
+          this.$refs.outputTextArea.style.height = this.$refs.outputTextArea.scrollHeight + "px";
+        }
+      });
     },
     clearOutputText(){
       this.outputText = "";
