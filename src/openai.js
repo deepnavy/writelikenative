@@ -1,11 +1,17 @@
 import axios from "axios";
 
-const createOpenaiInstance = (apiKey) => {
+const baseUrl =
+  process.env.NODE_ENV === "development"
+    ? import.meta.env.VITE_FLASK_APP_BASE_URL_LOCAL
+    : import.meta.env.VITE_FLASK_APP_BASE_URL_PROD;
+    
+console.log(baseUrl);
+
+const createOpenaiInstance = () => {
   return axios.create({
-    baseURL: "https://api.openai.com/v1/chat/completions",
+    baseURL: baseUrl + "/api",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
     },
   });
 };

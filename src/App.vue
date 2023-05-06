@@ -2,28 +2,8 @@
   <div class="min-h-screen bg-white">
     <header class="flex items-center justify-between px-4 py-2">
       <h1 class="text-sm text-slate-600 max-w-xs sm:max-w-full overflow-hidden whitespace-nowrap overflow-ellipsis">Write like <span class="pl-1 pr-1 bg-green-200 rounded text-green-800">a</span> native</h1>
-      <button
-        v-if="!useAppAPIKey"
-        @click="showModal = true"
-        :class="{
-          'bg-green-600': hasApiKey && !isInvalidApiKey,
-          'bg-blue-600': !hasApiKey || isInvalidApiKey,
-          'text-white': true,
-          'px-4': true,
-          'py-2': true,
-          'rounded-full': true,
-          'whitespace-nowrap': true
-        }"
-      >
-        <template v-if="hasApiKey && !isInvalidApiKey">
-          <svg  class="text-white inline-block h-4 w-4 mr-1 fill-current" clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m2.25 12.321 7.27 6.491c.143.127.321.19.499.19.206 0 .41-.084.559-.249l11.23-12.501c.129-.143.192-.321.192-.5 0-.419-.338-.75-.749-.75-.206 0-.411.084-.559.249l-10.731 11.945-6.711-5.994c-.144-.127-.322-.19-.5-.19-.417 0-.75.336-.75.749 0 .206.084.412.25.56" fill-rule="nonzero"/></svg>
-          
-          API Key added
-        </template>
-        <template v-else>Add API Key</template>
-      </button>
+
       <a
-        v-else
         href="https://twitter.com/deepnavy"
         target="_blank"
         rel="noopener noreferrer"
@@ -40,11 +20,6 @@
       </a>
     </header>
     <div class="z-50 container mx-auto px-4">
-      <APIKeyModal
-        v-if="showModal"
-        @close="showModal = false"
-        @clear-output-text="clearOutputText"
-      />
 
       <div class="w-full mt-14">
         <div class="text-center mb-4">
@@ -136,7 +111,7 @@
                 readonly
               ></textarea>
               <button
-                v-if="hasApiKey && outputText.length > 0 && !isInvalidApiKey"
+                v-if="!isError && outputText.length > 0"
                 @click="copyOutputText"
                 class="absolute top-3 right-3 w-6 h-6"
               >
@@ -163,13 +138,10 @@
 
 <script>
 import createOpenaiInstance from "@/openai";
-import { useStore } from "vuex";
-import APIKeyModal from "./components/APIKeyModal.vue";
 import AppDescription from "./components/AppDescription.vue";
 
 export default {
   components: {
-    APIKeyModal,
     AppDescription
   },
   data() {
@@ -181,18 +153,8 @@ export default {
       loading: false,
       copied: false,
       showMore: false,
-      useAppAPIKey: true
+      isError: false
     };
-  },
-  created() {
-    const store = useStore();
-    if (this.useAppAPIKey) {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-      this.$store.commit('setAPIKey', apiKey);
-    }
-    else if (!store.getters.getAPIKey) {
-      this.outputText = "Please provide (top-right corner) an OpenAI API key to use the app.";
-    }
   },
   computed: {
     isInputEmpty() {
@@ -202,15 +164,7 @@ export default {
       return `${this.inputText.length}/1500`;
     },
     disableImproveButton() {
-      return this.loading || this.inputText.length === 0 || this.inputText.length > 1500 || !this.$store.getters.getAPIKey;
-    },
-    hasApiKey() {
-      const store = useStore();
-      return !!store.getters.getAPIKey;
-    },
-    isInvalidApiKey() {
-      const store = useStore();
-      return store.getters.isInvalidApiKey;
+      return this.loading || this.inputText.length === 0 || this.inputText.length > 1500;
     },
   },
   watch: {
@@ -218,49 +172,27 @@ export default {
       if (newValue.length > 1500) {
         this.outputText = "Text exceeds 1500 character limit";
       }
-    },
-    "$store.getters.getAPIKey": function (newAPIKey, oldAPIKey) {
-      if (!newAPIKey) {
-        this.outputText = "Please add an OpenAI API key to use the app.";
-      }
-    },
+    }
   },
   methods: {
     async improveText() {
 
       this.loading = true;
+      this.isError = false;
 
-      const apiKey = this.$store.getters.getAPIKey;
-      const openai = createOpenaiInstance(apiKey);
-
-      const prompts = {
-        correct: "I want you to act as a spelling corrector and grammar improver. I will send you a word, sentence, or paragraph, and you’ll send me the result. Reply only with the improved text and nothing else, do not write explanations.",
-        teammate: "I want you to act as an editor, spelling corrector, and grammar improver. I’m writing a message to my teammate in a messaging app or email. I want to sound like a native speaker but keep it simple, natural, and conversational. I will send you a sentence or paragraph, and you’ll send me the result. Reply only with the improved text and nothing else, do not write explanations.",
-        blog: "I want you to act as an editor, spelling corrector, and grammar improver. I’m writing a blog post for Substack or an article for Medium. I want to sound more like a native speaker but keep it simple and avoid words and phrases that may sound too pretentious. I will send you a sentence or paragraph, and you’ll send me the result. Reply only with the improved text and nothing else, do not write explanations.",
-      };
-
-      const messages = [
-        { role: "system", content: prompts[this.selectedPrompt] },
-        { role: "user", content: this.inputText },
-      ];
+      const openai = createOpenaiInstance();
 
       const payload = {
-        model: "gpt-3.5-turbo",
-        messages: messages,
-        // max_tokens: 200,
+        selectedPrompt: this.selectedPrompt,
+        inputText: this.inputText,
       };
 
       try {
-        const response = await openai.post("", payload);
+        const response = await openai.post("/improve_text", payload);
         this.outputText = response.data.choices[0].message.content.trim();
       } catch (error) {
-        console.error(error);
-        if (error.response && error.response.status === 401) {
-          this.outputText = "Please check if you entered the correct API key.";
-          this.$store.commit("setInvalidApiKey", true);
-        } else {
-          this.outputText = "Error: Unable to fetch results";
-        }
+        this.outputText = "Error: Unable to fetch results";
+        this.isError = true;
       } finally {
         this.loading = false;
         this.syncTextAreaHeights();
