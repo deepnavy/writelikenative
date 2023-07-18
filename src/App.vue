@@ -26,7 +26,7 @@
           <label for="inputText" class="block">I want to improve a:</label>
         </div>
         <div class="flex justify-center">
-          <div class="flex justify-center mb-8 bg-slate-100 rounded-full">
+          <div class="flex justify-center mb-6 bg-slate-100 rounded-full">
             <button
               @click="selectedPrompt = 'blog'"
               :class="{ 'bg-blue-600 text-white': selectedPrompt === 'blog', 'text-gray-800': selectedPrompt !== 'blog' }"
@@ -50,7 +50,7 @@
             </button>
           </div>
         </div>
-        <!-- <a href="#app-description" class="text-sm text-blue-600 block text-center mb-6 md:">How does it work?</a> -->
+        <a href="#app-description" class="text-sm text-blue-600 block text-center mb-6 md:">How does this app work?</a>
         <div class="z-10 flex flex-col md:flex-row relative drop-shadow-md">
           <div class="w-full md:w-1/2">
             <div class="relative">
@@ -189,7 +189,7 @@ export default {
 
       try {
         const response = await openai.post("/improve_text", payload);
-        this.outputText = response.data.choices[0].message.content.trim();
+        this.outputText = response.data.trim();
       } catch (error) {
         this.outputText = "Error: Unable to fetch results";
         this.isError = true;
